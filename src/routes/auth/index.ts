@@ -6,8 +6,8 @@ const router = Router();
 
 router.post('/login', login);
 
-// El registro deja de ser público. Solo un admin puede crear usuarios/clientes.
-router.post('/register', protect, adminOnly, register);
+// El registro vuelve a ser público temporalmente para crear el primer admin.
+router.post('/register', register);
 router.get('/clients', protect, adminOnly, getClients);
 router.put('/clients/:id', protect, adminOnly, updateClient);
 
