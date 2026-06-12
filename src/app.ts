@@ -12,10 +12,9 @@ dotenv.config();
 const app = express();
 
 // Configuración de CORS
-// Obtenemos de .env o usamos un string vacío por defecto
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:5173']; // Fallback seguro en desarrollo
+  : ['http://localhost:5173', 'http://localhost:5174']; // Puertos por defecto para frontend y admin
 
 app.use(cors({
   origin: function (origin, callback) {

@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PayrollStats } from '../../types/payroll.types.js';
+import { PayrollStats } from '../payroll/types';
 
 export class GeminiService {
   /**

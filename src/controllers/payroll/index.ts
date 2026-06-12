@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { Payroll } from '../../models/payroll/index.js';
-import { uploadPayrollSchema, payrollParamsSchema } from '../../validation/payroll.js';
-import { parseCsvFromUrl } from '../../services/payroll/parser.js';
+import { uploadPayrollSchema, payrollParamsSchema, payrollFilterSchema } from '../../validation/payroll.js';
+import { parseCsvFromUrl } from '../../services/payroll/processors/parser.js';
 import { CloudinaryService } from '../../services/cloudinary.service.js';
-import { PayrollAnalyticsService } from '../../services/payroll/analytics.service.js';
+import { PayrollService } from '../../services/payroll/index.js';
 import fs from 'fs';
 
 /**
@@ -84,17 +84,16 @@ export async function getPayroll(req: Request, res: Response, next: NextFunction
 
     const payroll = await Payroll.findOne({ clientId: params.clientId, period: params.period })
       .select('data')
-      .skip(skip)
-      .limit(limit)
       .lean();
 
     if (!payroll) {
       return res.status(404).json({ message: 'Payroll not found' });
     }
 
-    // If pagination was applied, we slice the array manually because Mongo cannot paginate inside an array
-    const totalRows = payroll.data.length;
-    const paginated = payroll.data.slice(skip, skip + limit);
+    // Normalizar filas para corregir bug de $0 en tabla (v3.1)
+    const normalized = PayrollService.normalizeRows(payroll.data);
+    const totalRows = normalized.length;
+    const paginated = normalized.slice(skip, skip + limit);
 
     return res.json({
       clientId: params.clientId,
@@ -110,11 +109,13 @@ export async function getPayroll(req: Request, res: Response, next: NextFunction
 }
 
 /**
- * GET /payroll/:clientId/:period/stats
+ * POST /payroll/:clientId/:period/stats
+ * Receives filters in body
  */
 export async function getPayrollStats(req: Request, res: Response, next: NextFunction) {
   try {
     const params = payrollParamsSchema.parse({ clientId: req.params.clientId, period: req.params.period });
+    const filters = payrollFilterSchema.parse(req.body.filters);
     
     const payroll = await Payroll.findOne({ clientId: params.clientId, period: params.period }).lean();
 
@@ -122,7 +123,8 @@ export async function getPayrollStats(req: Request, res: Response, next: NextFun
       return res.status(404).json({ message: 'Payroll not found' });
     }
 
-    const analytics = PayrollAnalyticsService.calculateStats(payroll.data);
+    // Analítica atómica y filtrada (v3.1)
+    const analytics = PayrollService.filterAndAnalyze(payroll.data, filters || {});
 
     return res.json({
       clientId: params.clientId,
@@ -156,8 +158,8 @@ export async function comparePayrolls(req: Request, res: Response, next: NextFun
       return res.status(404).json({ message: 'Uno o ambos períodos no fueron encontrados' });
     }
 
-    const statsA = PayrollAnalyticsService.calculateStats(payrollA.data);
-    const statsB = PayrollAnalyticsService.calculateStats(payrollB.data);
+    const statsA = PayrollService.analyze(PayrollService.normalizeRows(payrollA.data));
+    const statsB = PayrollService.analyze(PayrollService.normalizeRows(payrollB.data));
 
     const calcVariation = (valA: number, valB: number) => {
       if (valA === 0) return valB > 0 ? 100 : 0;

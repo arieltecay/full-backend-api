@@ -3,7 +3,7 @@ import { Dashboard } from '../../models/dashboard/index.js';
 import { Payroll } from '../../models/payroll/index.js';
 import { User } from '../../models/user/index.js';
 import { createDashboardSchema, updateDashboardSchema } from '../../validation/dashboard.js';
-import { PayrollAnalyticsService } from '../../services/payroll/analytics.service.js';
+import { PayrollService } from '../../services/payroll/index.js';
 import { GeminiService } from '../../services/gemini/gemini-service.js';
 
 // Extendemos el tipo Request de Express para que acepte req.user
@@ -150,15 +150,18 @@ export async function getDashboardDetails(req: AuthenticatedRequest, res: Respon
 
     const client = await User.findById(dashboard.clientId).select('name').lean();
 
-    // Calcular estadísticas
-    const stats = PayrollAnalyticsService.calculateStats(payroll.data);
+    // Normalizar datos para asegurar camelCase y resolver bug de $0 (v3.1)
+    const normalizedRows = PayrollService.normalizeRows(payroll.data);
+
+    // Calcular estadísticas sobre los datos normalizados
+    const stats = PayrollService.analyze(normalizedRows);
 
     return res.json({
       dashboard,
       clientName: client?.name || 'Cliente',
       metadata: payroll.metadata,
       stats,
-      rows: payroll.data, // Todas las filas para visualización y filtrado dinámico en frontend
+      rows: normalizedRows, // Todas las filas normalizadas para el frontend
     });
   } catch (err) {
     next(err);
@@ -200,8 +203,8 @@ export async function queryDashboardAI(req: AuthenticatedRequest, res: Response,
     const client = await User.findById(dashboard.clientId).select('name').lean();
     const clientName = client?.name || 'Cliente';
 
-    // Agregamos estadísticas para Gemini
-    const stats = PayrollAnalyticsService.calculateStats(payroll.data);
+    // Agregamos estadísticas normalizadas para Gemini (v3.1)
+    const stats = PayrollService.analyze(PayrollService.normalizeRows(payroll.data));
 
     const responseText = await GeminiService.queryPayroll(query, stats, clientName);
 

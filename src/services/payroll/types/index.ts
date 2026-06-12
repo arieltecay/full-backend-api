@@ -7,6 +7,7 @@ export interface PayrollMetadata {
   contribuyente?: string;
   [key: string]: PayrollValue;
 }
+
 export interface PayrollRow {
   legajo?: string | number;
   apellidoNombre?: string;
@@ -17,12 +18,14 @@ export interface PayrollRow {
   remuneracionTotal?: number;
   adicionales?: number;
   deducciones?: number;
+  deducciones_os?: number;
+  deducciones_prev?: number;
   hijos?: number;
   obraSocial?: string;
   condicion?: string;
   actividad?: string;
   localidad?: string;
-  [key: string]: PayrollValue; // Permite columnas dinámicas adicionales de forma segura
+  [key: string]: PayrollValue;
 }
 
 export interface DistributionItem {
@@ -36,7 +39,11 @@ export interface PayrollStats {
     totalRemuneration: number;
     averageRemuneration: number;
     totalAdicionales: number;
+    totalDeducciones: number;
     totalHijos: number;
+    masaSalarial: number;
+    promedioNeto: number;
+    totalNeto: number;
     [key: string]: number;
   };
   distributions: {
@@ -44,7 +51,9 @@ export interface PayrollStats {
     condicion: DistributionItem[];
     actividad: DistributionItem[];
     localidad: DistributionItem[];
-    [key: string]: DistributionItem[];
+    sucursal?: DistributionItem[];
+    convenio?: DistributionItem[];
+    [key: string]: DistributionItem[] | undefined;
   };
 }
 
@@ -53,4 +62,9 @@ export interface PayrollFilter {
   convenio?: string;
   antiguedadRange?: string;
   searchTerm?: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }

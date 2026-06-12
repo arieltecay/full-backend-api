@@ -2,7 +2,8 @@ import axios from 'axios';
 import { parse } from '@fast-csv/parse';
 import { Transform } from 'stream';
 import * as XLSX from 'xlsx';
-import { PayrollMetadata, PayrollRow } from '../../types/payroll.types.js';
+import { PayrollMetadata, PayrollRow } from '../types';
+import { mapPayrollRow, validateRequiredColumns } from './mapper';
 
 export interface FileProcessorInterface {
   process(fileUrl: string): Promise<{ metadata: PayrollMetadata; rows: PayrollRow[] }>;
@@ -58,7 +59,16 @@ export class CsvProcessor implements FileProcessorInterface {
             transformed[key] = value as string | number | boolean | null | undefined;
           }
         }
-        cb(null, transformed);
+
+        // Aplicar Mapeo Inteligente (v2)
+        const normalized = mapPayrollRow(transformed);
+        
+        // Validación básica de la primera fila con datos
+        if (rows.length === 0 && !validateRequiredColumns(normalized)) {
+          return cb(new Error('El archivo no contiene las columnas mínimas requeridas (Legajo y Neto a Pagar)'));
+        }
+
+        cb(null, normalized);
       }
     });
 
@@ -137,7 +147,7 @@ export class ExcelProcessor implements FileProcessorInterface {
       raw: false // Obtener como strings para normalizar de forma homogénea
     });
 
-    const rows: PayrollRow[] = sheetData.map(row => {
+    const rows: PayrollRow[] = sheetData.map((row, index) => {
       const transformed: PayrollRow = {};
       for (const [key, value] of Object.entries(row)) {
         if (typeof value === 'string') {
@@ -151,7 +161,15 @@ export class ExcelProcessor implements FileProcessorInterface {
           transformed[key] = value as string | number | boolean | null | undefined;
         }
       }
-      return transformed;
+
+      // Aplicar Mapeo Inteligente (v2)
+      const normalized = mapPayrollRow(transformed);
+
+      if (index === 0 && !validateRequiredColumns(normalized)) {
+        throw new Error('El archivo Excel no contiene las columnas mínimas requeridas (Legajo y Neto a Pagar)');
+      }
+
+      return normalized;
     });
 
     return { metadata, rows };

@@ -1,5 +1,5 @@
-import { FileProcessorFactory } from './file-processor.js';
-import { PayrollMetadata, PayrollRow } from '../../types/payroll.types.js';
+import { FileProcessorFactory } from './file-processor';
+import { PayrollMetadata, PayrollRow } from '../types';
 
 export { PayrollMetadata };
 

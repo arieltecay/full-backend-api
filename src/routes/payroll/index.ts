@@ -14,8 +14,8 @@ router.get('/:clientId/periods', protect, getPayrollPeriods);
 // Comparison endpoint
 router.get('/:clientId/compare', protect, comparePayrolls);
 
-// Analytics endpoint
-router.get('/:clientId/:period/stats', protect, getPayrollStats);
+// Analytics endpoint (POST to support complex filters)
+router.post('/:clientId/:period/stats', protect, getPayrollStats);
 
 // Any authenticated user (admin or client) can read payrolls
 router.get('/:clientId/:period', protect, getPayroll);
