@@ -13,7 +13,7 @@ const app = express();
 
 // Configuración de CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : ['http://localhost:5173', 'http://localhost:5174']; // Puertos por defecto para frontend y admin
 
 app.use(cors({
