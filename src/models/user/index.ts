@@ -16,6 +16,7 @@ const userSchema = new Schema<IUser>(
     },
     accessExpiresAt: { type: Date, default: null },
     customNote: { type: String, default: '' },
+    managerPassword: { type: String, default: '' },
   },
   {
     timestamps: true,

@@ -10,4 +10,5 @@ export interface RegisterBody {
   email?: string;
   password?: string;
   role?: 'admin' | 'client';
+  managerPassword?: string;
 }

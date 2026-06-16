@@ -10,6 +10,7 @@ export const registerSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   role: z.enum(['admin', 'client']).optional(),
+  managerPassword: z.string().optional(),
 });
 
 export const updateClientSchema = z.object({

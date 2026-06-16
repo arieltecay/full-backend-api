@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth/index.js';
+import clientRoutes from './routes/clients/index.js';
 import homeRoutes from './routes/home-config/index.js';
 import reportRoutes from './routes/report/index.js';
 import payrollRouter from './routes/payroll/index.js';
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/clients', clientRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/payroll', payrollRouter);

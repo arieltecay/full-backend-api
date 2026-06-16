@@ -9,6 +9,7 @@ export interface IUser extends Document {
   status: 'active' | 'inactive' | 'suspended';
   accessExpiresAt?: Date | null;
   customNote?: string;
+  managerPassword?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
