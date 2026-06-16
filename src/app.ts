@@ -6,6 +6,7 @@ import homeRoutes from './routes/home-config/index.js';
 import reportRoutes from './routes/report/index.js';
 import payrollRouter from './routes/payroll/index.js';
 import dashboardRouter from './routes/dashboard/index.js';
+import { errorHandler } from './middleware/error-handler.js';
 
 dotenv.config();
 
@@ -42,5 +43,8 @@ app.use('/api/dashboards', dashboardRouter);
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Global error handler — debe ser el ÚLTIMO middleware
+app.use(errorHandler);
 
 export default app;

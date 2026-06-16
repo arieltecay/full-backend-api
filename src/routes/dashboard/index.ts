@@ -1,30 +1,27 @@
 import { Router } from 'express';
 import { getGlobalStats } from '../../controllers/dashboard/index.js';
-import { 
-  createDashboard, 
-  getDashboards, 
-  updateDashboard, 
-  deleteDashboard, 
-  getMyDashboards, 
-  getDashboardDetails, 
-  queryDashboardAI 
+import {
+  createDashboard,
+  getDashboards,
+  updateDashboard,
+  deleteDashboard,
+  getMyDashboards,
+  getDashboardDetails,
+  queryDashboardAI
 } from '../../controllers/dashboard/dashboard-controller.js';
 import { protect, adminOnly } from '../../middleware/auth/index.js';
+import { validate } from '../../middleware/validate.js';
+import { createDashboardSchema, updateDashboardSchema, dashboardParamsSchema, queryDashboardSchema } from '../../validation/dashboard.js';
 
 const router = Router();
 
-// Rutas para el cliente (y el admin) - Mover arriba para prioridad
 router.get('/my-dashboards', protect, getMyDashboards);
-
-// Rutas de administración general
 router.get('/stats', protect, adminOnly, getGlobalStats);
-router.post('/', protect, adminOnly, createDashboard);
+router.post('/', protect, adminOnly, validate(createDashboardSchema), createDashboard);
 router.get('/', protect, adminOnly, getDashboards);
-router.put('/:id', protect, adminOnly, updateDashboard);
-router.delete('/:id', protect, adminOnly, deleteDashboard);
-
-// Rutas de detalle
-router.get('/:id/details', protect, getDashboardDetails);
-router.post('/:id/query', protect, queryDashboardAI);
+router.put('/:id', protect, adminOnly, validate(updateDashboardSchema), validate(dashboardParamsSchema, 'params'), updateDashboard);
+router.delete('/:id', protect, adminOnly, validate(dashboardParamsSchema, 'params'), deleteDashboard);
+router.get('/:id/details', protect, validate(dashboardParamsSchema, 'params'), getDashboardDetails);
+router.post('/:id/query', protect, validate(dashboardParamsSchema, 'params'), validate(queryDashboardSchema), queryDashboardAI);
 
 export default router;

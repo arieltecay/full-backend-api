@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { getHomeConfig, updateHomeConfig } from '../../controllers/home-config/index.js';
 import { protect, adminOnly } from '../../middleware/auth/index.js';
+import { validate } from '../../middleware/validate.js';
+import { updateHomeConfigSchema } from '../../validation/home-config.js';
 
 const router = Router();
 
-// GET es público para que el Frontend pueda mostrar la info
 router.get('/', getHomeConfig);
-
-// PUT está protegido: requiere token y ser administrador
-router.put('/', protect, adminOnly, updateHomeConfig);
+router.put('/', protect, adminOnly, validate(updateHomeConfigSchema), updateHomeConfig);
 
 export default router;

@@ -1,15 +1,16 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { User } from '../../models/user/index.js';
 import { generateToken } from '../../config/jwt/index.js';
 import { LoginBody, RegisterBody } from './types.js';
+import { AppError } from '../../utils/app-error.js';
 
-export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
+export const login = async (req: Request<{}, {}, LoginBody>, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.comparePassword(password!))) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+      throw new AppError(401, 'Credenciales inválidas');
     }
 
     res.json({
@@ -20,17 +21,17 @@ export const login = async (req: Request<{}, {}, LoginBody>, res: Response) => {
       token: generateToken(user._id.toString(), user.role),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error en el servidor' });
+    next(error);
   }
 };
 
-export const register = async (req: Request<{}, {}, RegisterBody>, res: Response) => {
+export const register = async (req: Request<{}, {}, RegisterBody>, res: Response, next: NextFunction) => {
   try {
     const { name, email, password, role } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
+      throw new AppError(400, 'El usuario ya existe');
     }
 
     const user = await User.create({ name, email, password, role });
@@ -43,34 +44,27 @@ export const register = async (req: Request<{}, {}, RegisterBody>, res: Response
       token: generateToken(user._id.toString(), user.role),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error al crear usuario' });
+    next(error);
   }
 };
 
-/**
- * Obtiene todos los usuarios con rol de cliente
- */
-export const getClients = async (req: Request, res: Response) => {
+export const getClients = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const clients = await User.find({ role: 'client' }).select('-password').sort('-createdAt');
     res.json(clients);
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener clientes' });
+    next(error);
   }
 };
 
-/**
- * Actualiza la información de un cliente (Solo Admin)
- */
-export const updateClient = async (req: Request, res: Response) => {
+export const updateClient = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const { isActive, status, accessExpiresAt, customNote } = req.body;
 
     const user = await User.findById(id);
-
     if (!user || user.role !== 'client') {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
+      throw new AppError(404, 'Cliente no encontrado');
     }
 
     if (isActive !== undefined) user.isActive = isActive;
@@ -91,6 +85,6 @@ export const updateClient = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error al actualizar el cliente' });
+    next(error);
   }
 };

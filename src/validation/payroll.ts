@@ -1,14 +1,19 @@
 import { z } from 'zod';
+import { objectId } from '../middleware/validate';
 
 export const uploadPayrollSchema = z.object({
-  clientId: z.string(), // could be UUID or simple string
-  period: z.string().regex(/^\d{2}-\d{4}$/, { message: 'Period must be MM-YYYY' }),
+  clientId: z.string(),
+  period: z.string().regex(/^\d{2}-\d{4}$/, { message: 'El período debe tener el formato MM-YYYY' }),
   fileUrl: z.string().url().optional(),
 });
 
 export const payrollParamsSchema = z.object({
   clientId: z.string(),
-  period: z.string().regex(/^\d{2}-\d{4}$/, { message: 'Period must be MM-YYYY' }),
+  period: z.string().regex(/^\d{2}-\d{4}$/, { message: 'El período debe tener el formato MM-YYYY' }),
+});
+
+export const clientIdParamSchema = z.object({
+  clientId: objectId,
 });
 
 export const payrollFilterSchema = z.object({
@@ -17,3 +22,8 @@ export const payrollFilterSchema = z.object({
   antiguedadRange: z.string().optional(),
   searchTerm: z.string().optional(),
 }).optional();
+
+export const comparePayrollsQuerySchema = z.object({
+  periodA: z.string().regex(/^\d{2}-\d{4}$/, { message: 'El período debe tener el formato MM-YYYY' }),
+  periodB: z.string().regex(/^\d{2}-\d{4}$/, { message: 'El período debe tener el formato MM-YYYY' }),
+});

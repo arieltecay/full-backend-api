@@ -3,8 +3,9 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../models/user/index.js';
 import { TokenPayload } from './types.js';
 import { JWT_CONFIG } from '../../config/jwt/types.js';
+import { AppError } from '../../utils/app-error.js';
 
-export const protect = async (req: any, res: Response, next: NextFunction) => {
+export const protect = async (req: any, _res: Response, next: NextFunction) => {
   let token;
 
   if (req.headers.authorization?.startsWith('Bearer')) {
@@ -13,35 +14,37 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
       const decoded = jwt.verify(token, JWT_CONFIG.secret) as TokenPayload;
 
       req.user = await User.findById(decoded.id).select('-password');
-      
+
       if (!req.user) {
-        return res.status(401).json({ message: 'Usuario no encontrado' });
+        throw new AppError(401, 'Usuario no encontrado');
       }
 
-      // Check if user is active
       if (!req.user.isActive || req.user.status !== 'active') {
-        return res.status(403).json({ message: 'Tu cuenta ha sido desactivada o suspendida' });
+        throw new AppError(403, 'Tu cuenta ha sido desactivada o suspendida');
       }
 
-      // Check for temporal access expiration
       if (req.user.role === 'client' && req.user.accessExpiresAt && new Date() > req.user.accessExpiresAt) {
-        return res.status(403).json({ message: 'Tu acceso temporal ha expirado. Contacta al administrador.' });
+        throw new AppError(403, 'Tu acceso temporal ha expirado. Contacta al administrador.');
       }
 
       next();
     } catch (error) {
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
       console.error('JWT Error:', error);
-      res.status(401).json({ message: 'No autorizado, token fallido' });
+      next(new AppError(401, 'No autorizado, token fallido'));
     }
   } else {
-    res.status(401).json({ message: 'No autorizado, sin token' });
+    next(new AppError(401, 'No autorizado, sin token'));
   }
 };
 
-export const adminOnly = (req: any, res: Response, next: NextFunction) => {
+export const adminOnly = (req: any, _res: Response, next: NextFunction) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
-    res.status(403).json({ message: 'Acceso denegado: se requieren permisos de administrador' });
+    next(new AppError(403, 'Acceso denegado: se requieren permisos de administrador'));
   }
 };
